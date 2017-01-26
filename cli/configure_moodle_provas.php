@@ -455,29 +455,4 @@ foreach ($configs AS $cfg) {
     }
 }
 
-$auth = get_config('moodle', 'auth');
-$exam = false;
-if (empty($auth)) {
-    if (exists_auth_plugin('exam')) {
-        $auth = 'exam';
-        set_config('auth', $auth);
-        echo "\n=> Authentication plugin: '{$auth}' was enabled.\n";
-        $exam = true;
-    } else {
-        echo "\n=> 'Moodle Exam' authentication plugin is not avaliable. Keeped 'manual' authentication as the only one option.\n";
-        set_config('auth_plugin', 'manual', 'local_exam_authorization');
-    }
-} else {
-    echo "\n=> Authentication plugin is already seted to: '{$auth}'\n";
-    if ($auth == 'exam') {
-        echo "\n=> Authentication plugin: '{$auth}' is enabled.\n";
-        $exam = true;
-    }
-}
-
-if ($exam) {
-    set_config('authpreventaccountcreation', 0);
-    set_config('auth_plugin', $auth, 'local_exam_authorization');
-    echo "\n=> Config 'authpreventaccountcreation' was changed to 'false' to allow automatic creation of users in the Moodle Exam after they autenticate themselves.\n";
-}
 echo "\n=> end\n";
