@@ -289,9 +289,6 @@ class authorization {
                             if ($ip_range_editor_ok) {
                                 $role = self::get_capabilities()[$capability];
                                 $SESSION->exam->roleids_by_courses[$courseid][] = $role->id;
-                                $SESSION->exam->write_exam = true;
-                            } else {
-                                $out_of_editor_ip_range = true;
                             }
                         } else if ($capability == 'local/exam_remote:supervise_exam') {
                             $role = self::get_capabilities()[$capability];
@@ -303,6 +300,12 @@ class authorization {
                             $SESSION->exam->monitor_exam = true;
                         }
                     }
+                }
+            }
+            if (in_array("local/exam_remote:write_exam", $rcourse->capabilities)) {
+                $SESSION->exam->write_exam = true;
+                if (!$ip_range_editor_ok) {
+                    $out_of_editor_ip_range = true;
                 }
             }
         }
@@ -499,7 +502,6 @@ class authorization {
         foreach (self::call_remote_function($identifier, $function, $params) as $st) {
             $st->remote_id = $st->id;
             unset($st->id);
-            $customfields = array();
             foreach ($st->customfields AS $obj) {
                 $customfield = $obj->field;
                 $st->$customfield = $obj->value;
