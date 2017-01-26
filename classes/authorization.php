@@ -37,7 +37,7 @@ require_once($CFG->libdir.'/filelib.php');
 
 class authorization {
 
-    public static $userfields = array('username', 'firstname', 'lastname', 'idnumber', 'email');
+    public static $userfields = array('username', 'firstname', 'lastname', 'email');
 
     private static $moodles = null;
     private static $config = null;
@@ -48,7 +48,7 @@ class authorization {
      *
      * @return array Mapping capabilities to roles
      */
-    public static function capabilities() {
+    public static function get_capabilities() {
         global $DB;
 
         if (!isset(self::$capabilities)) {
@@ -58,54 +58,43 @@ class authorization {
                 'local/exam_remote:write_exam' =>
                     $DB->get_record('role', array('shortname' => 'editingteacher'), '*', MUST_EXIST),
                 'local/exam_remote:supervise_exam' =>
-                    $DB->get_record('role', array('id' => self::config('supervisor_roleid')), '*', MUST_EXIST),
+                    $DB->get_record('role', array('id' => self::get_config('supervisor_roleid')), '*', MUST_EXIST),
                 'local/exam_remote:monitor_exam' =>
-                    $DB->get_record('role', array('id' => self::config('monitor_roleid')), '*', MUST_EXIST),
+                    $DB->get_record('role', array('id' => self::get_config('monitor_roleid')), '*', MUST_EXIST),
                 );
         }
         return self::$capabilities;
     }
 
-    /**
-     * Returns true if the username and password work and false if they are
-     * wrong or don't exist.
-     *
-     * @param string $username The username (with system magic quotes)
-     * @param string $password The password (with system magic quotes)
-     *
-     * @return bool Authentication success or failure.
-     */
-    public static function authenticate($username, $password) {
-        $ws_function = 'local_exam_remote_authenticate';
-        $params = array('username' => $username, 'password' => $password);
-
-        foreach (self::moodles() AS $m) {
-            if (self::call_remote_function($m->identifier, $ws_function, $params) === true) {
-                return true;
-            }
+    public static function get_moodle($identifier) {
+        self::get_moodles();
+        if (isset(self::$moodles[$identifier])) {
+            return self::$moodles[$identifier];
+        } else {
+            return false;
         }
-        return false;
     }
 
-    /**
-     * Returns the user data or false if the user doesn't exist
-     *
-     * @param string $username The username (with system magic quotes)
-     *
-     * @return mixed array with user data or false the username is unknown
-     */
-    public static function userinfo($username) {
-        $ws_function = 'core_user_get_users_by_field';
-        $params = array('field' => 'username',  'values' => array($username));
+    public static function get_moodles() {
+        global $DB;
 
-        foreach (self::moodles() AS $m) {
-            $users = self::call_remote_function($m->identifier, $ws_function, $params);
-            if (!empty($users)) {
-                return reset($users);
-            }
+        if (self::$moodles == null) {
+            self::$moodles = $DB->get_records('exam_authorization', array('enable' => 1), null, 'identifier, description, url, token');
         }
-        return false;
+
+        return self::$moodles;
     }
+
+    public static function get_config($key) {
+        self::load_config();
+        if (isset(self::$config->$key)) {
+            return self::$config->$key;
+        } else {
+            return false;
+        }
+    }
+
+    // ========================================================================================
 
     /**
      * Process the user_loggedin event. Check the user permissions and sync enrols
@@ -155,7 +144,7 @@ class authorization {
     private static function check_sessions($userid) {
         global $SESSION;
 
-        $sessions = self::user_sessions($userid);
+        $sessions = self::get_user_sessions($userid);
         $numsessions = count($sessions);
         if ($numsessions > 1) {
             foreach ($sessions as $ses) {
@@ -185,7 +174,7 @@ class authorization {
         return $count;
     }
 
-    private static function user_sessions($userid) {
+    private static function get_user_sessions($userid) {
         global $DB;
 
         $sql = "SELECT s.*, l.id IS NOT NULL AS is_taking_exam
@@ -253,8 +242,8 @@ class authorization {
 
         $course = $DB->get_record('course', array('id' => $rec_key->courseid), 'id, shortname, visible');
         if ($course && $course->visible) {
-            list($identifier, $shortname) = explode('_', $course->shortname, 2);
-            $capabilities = self::user_capabilities($user->username, $shortname, $identifier);
+            list($identifier, $shortname) = self::split_shortname($course->shortname);
+            $capabilities = self::get_user_capabilities($user->username, $shortname, $identifier);
             if (!in_array('local/exam_remote:take_exam', $capabilities)) {
                 self::add_to_log($access_key, $user->id, 'no_student_permission');
                 self::error('no_student_permission');
@@ -263,7 +252,7 @@ class authorization {
                 self::error('more_than_student_permission');
             } else {
                 self::add_to_log($access_key, $user->id, 'ok', session_id());
-                $role = self::capabilities()['local/exam_remote:take_exam'];
+                $role = self::get_capabilities()['local/exam_remote:take_exam'];
                 $SESSION->exam->roleids_by_courses[$course->id][] = $role->id;
             }
         } else {
@@ -289,7 +278,7 @@ class authorization {
         $ip_range_editor_ok = self::check_ip_range_editor(false);
         $out_of_editor_ip_range = false;
 
-        $remote_courses = self::user_courses($username);
+        $remote_courses = self::get_user_courses($username);
 
         foreach ($remote_courses AS $identifier => $rcourses) {
             foreach ($rcourses AS $rcourse) {
@@ -298,18 +287,18 @@ class authorization {
                     foreach ($rcourse->capabilities AS $capability) {
                         if ($capability == 'local/exam_remote:write_exam') {
                             if ($ip_range_editor_ok) {
-                                $role = self::capabilities()[$capability];
+                                $role = self::get_capabilities()[$capability];
                                 $SESSION->exam->roleids_by_courses[$courseid][] = $role->id;
                                 $SESSION->exam->write_exam = true;
                             } else {
                                 $out_of_editor_ip_range = true;
                             }
                         } else if ($capability == 'local/exam_remote:supervise_exam') {
-                            $role = self::capabilities()[$capability];
+                            $role = self::get_capabilities()[$capability];
                             $SESSION->exam->roleids_by_courses[$courseid][] = $role->id;
                             $SESSION->exam->supervise_exam = true;
                         } else if ($capability == 'local/exam_remote:monitor_exam') {
-                            $role = self::capabilities()[$capability];
+                            $role = self::get_capabilities()[$capability];
                             $SESSION->exam->roleids_by_courses[$courseid][] = $role->id;
                             $SESSION->exam->monitor_exam = true;
                         }
@@ -380,48 +369,6 @@ class authorization {
     }
 
     /**
-     * Get the remote courses the user has some exam capabilities
-     *
-     * @param string $username The username
-     * @param string $identifier The remote Moodle identifier or blank for all remote Moodles
-     *
-     * @return array
-     */
-
-    public static function user_courses($username, $identifier='') {
-        global $DB;
-
-        $ws_function = 'local_exam_remote_user_courses';
-        $params = array('username' => $username);
-
-        $moodles = empty($identifier) ? self::moodles() : array(self::moodle($identifier));
-
-        $courses = array();
-        foreach ($moodles AS $m) {
-            $courses[$m->identifier] = array();
-            foreach (self::call_remote_function($m->identifier, $ws_function, $params) as $course) {
-                $courses[$m->identifier][$course->shortname] = $course;
-            }
-        }
-        return $courses;
-    }
-
-    /**
-     * Get the capabilities a user has on a remote course
-     *
-     * @param string $username The username
-     * @param string $shortname The course shortname
-     * @param string $identifier The remote Moodle identifier or blank for all remote Moodles
-     *
-     * @return array
-     */
-    public static function user_capabilities($username, $shortname, $identifier) {
-        $ws_function = 'local_exam_remote_user_capabilities';
-        $params = array('username' => $username, 'shortname' => $shortname);
-        return self::call_remote_function($identifier, $ws_function, $params);
-    }
-
-    /**
      * Review the user permissions, except the student case
      *
      * @param stdclass $user The user
@@ -447,52 +394,133 @@ class authorization {
         return true;
     }
 
-    // ---------------------------------------------------------------------------
-    // A rever
-    // ---------------------------------------------------------------------------
+    // ========================================================================================
 
+    // Functions to get remote data
 
-    // Get users enrolled in a course
-    public static function enrolled_users($shortname, $identifier) {
-        $ws_function = 'core_enrol_get_enrolled_users_with_capability';
-        $params = array('coursecapabilities[0][courseid]' => 2,
-                        'options[0][name]' => 'onlyactive', 'options[0][value]' => 1,
-                        'options[1][name]' => 'userfields', 'options[1][value]' => implode(',', self::$userfields),
-                       );
-        $count = 0;
-        foreach (self::capabilities() as $cap=>$role) {
-            $params["coursecapabilities[0][capabilities][{$count}]"] = $cap;
-            $count++;
-        }
+    /**
+     * Returns true if the username and password work and false if they are
+     * wrong or don't exist.
+     *
+     * @param string $username The username (with system magic quotes)
+     * @param string $password The password (with system magic quotes)
+     *
+     * @return bool Authentication success or failure.
+     */
+    public static function authenticate($username, $password) {
+        $ws_function = 'local_exam_remote_authenticate';
+        $params = array('username' => $username, 'password' => $password);
 
-        $result = self::call_remote_function($identifier, $ws_function, $params);
-
-        $users = array();
-        $capabilities = self::capabilities();
-        foreach ($result as $r) {
-            $role = $capabilities[$r->capability];
-            foreach ($r->users as $u) {
-                if (!isset($users[$u->username])) {
-                    $u->roleids = array();
-                    $users[$u->username] = $u;
-                }
-                $users[$u->username]->roleids[] = $role->id;
+        foreach (self::get_moodles() AS $m) {
+            if (self::call_remote_function($m->identifier, $ws_function, $params) === true) {
+                return true;
             }
         }
-        return $users;
+        return false;
+    }
+
+    /**
+     * Returns the user data or false if the user doesn't exist
+     *
+     * @param string $username The username (with system magic quotes)
+     *
+     * @return mixed array with user data or false the username is unknown
+     */
+    public static function get_userinfo($username) {
+        $ws_function = 'core_user_get_users_by_field';
+        $params = array('field' => 'username',  'values' => array($username));
+
+        foreach (self::get_moodles() AS $m) {
+            $users = self::call_remote_function($m->identifier, $ws_function, $params);
+            if (!empty($users)) {
+                return reset($users);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get the remote courses the user has some exam capabilities
+     *
+     * @param string $username The username
+     * @param string $identifier The remote Moodle identifier or blank for all remote Moodles
+     *
+     * @return array
+     */
+
+    public static function get_user_courses($username, $identifier='') {
+        global $DB;
+
+        $ws_function = 'local_exam_remote_get_user_courses';
+        $params = array('username' => $username);
+
+        $moodles = empty($identifier) ? self::get_moodles() : array(self::get_moodle($identifier));
+
+        $courses = array();
+        foreach ($moodles AS $m) {
+            $courses[$m->identifier] = array();
+            foreach (self::call_remote_function($m->identifier, $ws_function, $params) as $course) {
+                $courses[$m->identifier][$course->shortname] = $course;
+            }
+        }
+        return $courses;
+    }
+
+    /**
+     * Get the capabilities a user has on a remote course
+     *
+     * @param string $username The username
+     * @param string $shortname The course shortname
+     * @param string $identifier The remote Moodle identifier or blank for all remote Moodles
+     *
+     * @return array
+     */
+    public static function get_user_capabilities($username, $shortname, $identifier) {
+        $ws_function = 'local_exam_remote_get_user_capabilities';
+        $params = array('username' => $username, 'shortname' => $shortname);
+        return self::call_remote_function($identifier, $ws_function, $params);
+    }
+
+    /**
+     * Get students from a remote course
+     *
+     * @param string $identifier The remote Moodle identifier or blank for all remote Moodles
+     * @param string $shortname The course shortname
+     *
+     * @return array
+     */
+
+    public static function get_students($shortname, $identifier, $customfields=array()) {
+        $function = 'local_exam_remote_get_students';
+        $params = array('shortname' => $shortname);
+        $params['customfields'] = $customfields;
+
+        $studentes = array();
+        foreach (self::call_remote_function($identifier, $function, $params) as $st) {
+            $st->remote_id = $st->id;
+            unset($st->id);
+            $customfields = array();
+            foreach ($st->customfields AS $obj) {
+                $customfield = $obj->field;
+                $st->$customfield = $obj->value;
+            }
+            unset($st->customfields);
+            $students[$st->username] = $st;
+        }
+        return $students;
     }
 
     // ========================================================================================
 
-    public static function remote_addr() {
-        $remoteaddrfield = self::config('remoteaddrfield');
+    public static function get_remote_addr() {
+        $remoteaddrfield = self::get_config('remoteaddrfield');
         if (empty($remoteaddrfield) || !isset($_SERVER[$remoteaddrfield])) {
             $remoteaddrfield = 'REMOTE_ADDR';
         }
         return $_SERVER[$remoteaddrfield];
     }
 
-    public static function http_headers() {
+    public static function get_http_headers() {
         $allheaders = getallheaders();
         $headers = new \stdClass();
 
@@ -513,75 +541,7 @@ class authorization {
         return $headers;
     }
 
-    public static function add_to_log($access_key, $userid, $info='', $sessionid=0) {
-        global $DB;
-
-        $rec = new \stdClass();
-        $rec->access_key = $access_key;
-        $rec->userid = $userid;
-        $rec->ip = self::remote_addr();
-        $rec->time = time();
-        $rec->info = $info;
-        $rec->sessionid = $sessionid;
-
-        $headers = self::http_headers();
-        $rec->header_version = $headers->version;
-        $rec->header_ip = $headers->ip;
-        $rec->header_network = $headers->network;
-
-        $DB->insert_record('exam_access_keys_log', $rec);
-    }
-
-
-    public static function moodle($identifier) {
-        self::moodles();
-        if (isset(self::$moodles[$identifier])) {
-            return self::$moodles[$identifier];
-        } else {
-            return false;
-        }
-    }
-
-    public static function moodles() {
-        global $DB;
-
-        if (self::$moodles == null) {
-            self::$moodles = $DB->get_records('exam_authorization', array('enable' => 1), null, 'identifier, description, url, token');
-        }
-
-        return self::$moodles;
-    }
-
-    public static function call_remote_function($identifier, $ws_function, $params) {
-        global $DB;
-
-        if (!$moodle = self::moodle($identifier)) {
-            throw new \Exception(get_string('unknown_identifier', 'local_exam_authorization', $identifier));
-        }
-
-        $curl = new \curl;
-        $curl->setopt(array('CURLOPT_SSL_VERIFYHOST' => 0, 'CURLOPT_SSL_VERIFYPEER' => 0));
-        $serverurl = "{$moodle->url}/webservice/rest/server.php?wstoken={$moodle->token}&wsfunction={$ws_function}&moodlewsrestformat=json";
-
-        // formating (not recursive) an array in POST parameter.
-        // We try to use 'format_array_postdata_for_curlcall' from filelib.php, but there's some troubles with stored_files
-        foreach ($params AS $key => $value) {
-            if (is_array($value)) {
-                unset($params[$key]);
-                foreach ($value AS $i => $v) {
-                    $params[$key.'['.$i.']'] = $v;
-                }
-            }
-        }
-
-        $result = json_decode($curl->post($serverurl, $params));
-        if (is_object($result) && isset($result->exception)) {
-            throw new \Exception($result->message);
-        } else if (is_null($result)) {
-            throw new \Exception(get_string('return_null', 'local_exam_authorization', $moodle->description));
-        }
-        return $result;
-    }
+    // ========================================================================================
 
     private static function load_config() {
         if (self::$config == null) {
@@ -613,17 +573,10 @@ class authorization {
         }
     }
 
-    public static function config($key) {
-        self::load_config();
-        if (isset(self::$config->$key)) {
-            return self::$config->$key;
-        } else {
-            return false;
-        }
-    }
+    // ========================================================================================
 
     public static function is_header_check_disabled() {
-        return self::config('disable_header_check');
+        return self::get_config('disable_header_check');
     }
 
     public static function check_version_header($throw_exception=true) {
@@ -634,7 +587,7 @@ class authorization {
         $version = self::$config->header_version;
         $pattern = '/^[0-9]+\.[0-9]+$/';
 
-        $headers = self::http_headers();
+        $headers = self::get_http_headers();
 
         if (empty($headers->version)) {
             if ($throw_exception) {
@@ -666,7 +619,7 @@ class authorization {
             return true;
         }
 
-        $headers = self::http_headers();
+        $headers = self::get_http_headers();
 
         if (empty($headers->ip)) {
             if ($throw_exception) {
@@ -695,7 +648,7 @@ class authorization {
         $netmask_pattern = "({$netmask_octet_pattern})(\.({$netmask_octet_pattern})){3}";
         $pattern = "/^{$netmask_pattern}\/[1-9][0-9]?$/";
 
-        $headers = self::http_headers();
+        $headers = self::get_http_headers();
 
         if (empty($headers->network)) {
             if ($throw_exception) {
@@ -716,11 +669,11 @@ class authorization {
     }
 
     public static function check_ip_range_student($throw_exception=true) {
-        return self::check_ip_range(self::config('ip_ranges_students'), $throw_exception);
+        return self::check_ip_range(self::get_config('ip_ranges_students'), $throw_exception);
     }
 
     public static function check_ip_range_editor($throw_exception=true) {
-        return self::check_ip_range(self::config('ip_ranges_editors'), $throw_exception);
+        return self::check_ip_range(self::get_config('ip_ranges_editors'), $throw_exception);
     }
 
     private static function check_ip_range($str_ranges='', $throw_exception=true) {
@@ -728,7 +681,7 @@ class authorization {
         $ranges = explode(';', $str_ranges);
         if (!empty($str_ranges) && !empty($ranges)) {
             foreach ($ranges AS $range) {
-                if (IPTools::ip_in_range(self::remote_addr(), trim($range))) {
+                if (IPTools::ip_in_range(self::get_remote_addr(), trim($range))) {
                     return true;
                 }
             }
@@ -749,11 +702,11 @@ class authorization {
             return true;
         }
 
-        $timeout = self::config('client_host_timeout');
+        $timeout = self::get_config('client_host_timeout');
 
         if (!empty($access_key->verify_client_host) && !empty($timeout)) {
-            $remote_addr = self::remote_addr();
-            $headers = self::http_headers();
+            $remote_addr = self::get_remote_addr();
+            $headers = self::get_http_headers();
 
             $params = array('ip'=>$headers->ip, 'network'=>$headers->network, 'real_ip'=>$remote_addr);
             if (!$client = $DB->get_record('exam_client_hosts', $params)) {
@@ -794,6 +747,8 @@ class authorization {
         return ($ip_ip_net == $ip_net);
     }
 
+    // ========================================================================================
+
     private static function error($error_code, $param=null) {
         global $SESSION;
 
@@ -815,4 +770,61 @@ class authorization {
             return false;
         }
     }
+
+    // ========================================================================================
+
+    public static function add_to_log($access_key, $userid, $info='', $sessionid=0) {
+        global $DB;
+
+        $rec = new \stdClass();
+        $rec->access_key = $access_key;
+        $rec->userid = $userid;
+        $rec->ip = self::get_remote_addr();
+        $rec->time = time();
+        $rec->info = $info;
+        $rec->sessionid = $sessionid;
+
+        $headers = self::get_http_headers();
+        $rec->header_version = $headers->version;
+        $rec->header_ip = $headers->ip;
+        $rec->header_network = $headers->network;
+
+        $DB->insert_record('exam_access_keys_log', $rec);
+    }
+
+    public static function split_shortname($shortname) {
+        return explode('_', $shortname, 2);
+    }
+
+    public static function call_remote_function($identifier, $ws_function, $params) {
+        global $DB;
+
+        if (!$moodle = self::get_moodle($identifier)) {
+            throw new \Exception(get_string('unknown_identifier', 'local_exam_authorization', $identifier));
+        }
+
+        $curl = new \curl;
+        $curl->setopt(array('CURLOPT_SSL_VERIFYHOST' => 0, 'CURLOPT_SSL_VERIFYPEER' => 0));
+        $serverurl = "{$moodle->url}/webservice/rest/server.php?wstoken={$moodle->token}&wsfunction={$ws_function}&moodlewsrestformat=json";
+
+        // formating (not recursive) an array in POST parameter.
+        // We try to use 'format_array_postdata_for_curlcall' from filelib.php, but there's some troubles with stored_files
+        foreach ($params AS $key => $value) {
+            if (is_array($value)) {
+                unset($params[$key]);
+                foreach ($value AS $i => $v) {
+                    $params[$key.'['.$i.']'] = $v;
+                }
+            }
+        }
+
+        $result = json_decode($curl->post($serverurl, $params));
+        if (is_object($result) && isset($result->exception)) {
+            throw new \Exception($result->message);
+        } else if (is_null($result)) {
+            throw new \Exception(get_string('return_null', 'local_exam_authorization', $moodle->description));
+        }
+        return $result;
+    }
+
 }

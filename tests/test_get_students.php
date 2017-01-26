@@ -33,5 +33,5 @@ define('CLI_SCRIPT', true);
 
 require_once(dirname(__FILE__).'/../../../config.php');
 
-$courses = \local_exam_authorization\authorization::user_courses('t1');
-var_dump($courses);
+$students = \local_exam_authorization\authorization::get_students('c1', 'origem', array('cpf'));
+var_dump($students);

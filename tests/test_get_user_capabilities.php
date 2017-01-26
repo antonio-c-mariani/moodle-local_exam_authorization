@@ -33,5 +33,5 @@ define('CLI_SCRIPT', true);
 
 require_once(dirname(__FILE__).'/../../../config.php');
 
-$caps = \local_exam_authorization\authorization::user_capabilities('t1', 'c1', 'origem');
+$caps = \local_exam_authorization\authorization::get_user_capabilities('t1', 'c1', 'origem');
 var_dump($caps);

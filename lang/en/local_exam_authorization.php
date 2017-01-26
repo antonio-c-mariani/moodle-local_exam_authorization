@@ -102,7 +102,7 @@ $string['monitor_roleid'] = 'Papel para monitores';
 $string['monitor_roleid_descr'] = 'Papel com os quais pessoas que monitoram a realização de provas são inscritos nos cursos Moodle.';
 
 $string['auth_plugin'] = 'Método de autenticação';
-$string['auth_plugin_descr'] = 'Método de autenticação para novos usuários que sejam cadastrados no Moodle Provas.';
+$string['auth_plugin_descr'] = 'Método de autenticação para novos usuários que sejam automaticamente cadastrados por este módulo no Moodle Provas.';
 
 $string['browser_no_version_header'] = 'Não foi possível validar a versão do CD de Provas.';
 $string['browser_invalid_version_header'] = 'Versão inválida do CD de Provas.';

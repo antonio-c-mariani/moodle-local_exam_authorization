@@ -34,9 +34,22 @@ define('CLI_SCRIPT', true);
 require_once(dirname(__FILE__).'/../../../config.php');
 
 $plugin_manager = core_plugin_manager::instance();
+
 $installed = $plugin_manager->get_installed_plugins('local');
 if (!isset($installed['exam_authorization'])) {
-    echo "\n=> Plugin 'exam_authorization' is not installed.\n";
+    echo "\n=> Plugin 'local/exam_authorization' is not installed.\n";
+    exit;
+}
+
+$installed = $plugin_manager->get_installed_plugins('block');
+if (!isset($installed['exam_actions'])) {
+    echo "\n=> Plugin 'block/exam_actions' is not installed.\n";
+    exit;
+}
+
+$installed = $plugin_manager->get_installed_plugins('auth');
+if (!isset($installed['exam'])) {
+    echo "\n=> Plugin 'auth/exam' is not installed.\n";
     exit;
 }
 
@@ -52,6 +65,7 @@ if ($roleid = $DB->get_field('role', 'id', array('shortname' => 'supervisor'))) 
 }
 assign_capability('local/exam_authorization:supervise_exam', CAP_ALLOW, $roleid, $systemcontext->id);
 assign_capability('moodle/course:managegroups', CAP_ALLOW, $roleid, $systemcontext->id);
+set_config('supervisor_roleid', $roleid, 'local_exam_authorization');
 
 if ($roleid = $DB->get_field('role', 'id', array('shortname' => 'monitor'))) {
     echo "      - role 'monitor' already exists\n";
@@ -61,8 +75,9 @@ if ($roleid = $DB->get_field('role', 'id', array('shortname' => 'monitor'))) {
     echo "      - created role 'monitor'\n";
 }
 assign_capability('local/exam_authorization:monitor_exam', CAP_ALLOW, $roleid, $systemcontext->id);
+set_config('monitor_roleid', $roleid, 'local_exam_authorization');
 
-echo "\n=> Removing permitions to assign, override and switch roles from 'editingteacher' and '' roles\n";
+echo "\n=> Removing permitions to assign, override and switch roles from 'editingteacher' and 'teacher' roles\n";
 if ($roleid = $DB->get_field('role', 'id', array('shortname' => 'editingteacher'))) {
     $DB->delete_records('role_allow_assign',   array('roleid' => $roleid));
     $DB->delete_records('role_allow_override', array('roleid' => $roleid));
@@ -328,7 +343,6 @@ $configs = array(
                  array('gradepublishing', false),
                  array('registerauth', false),
                  array('guestloginbutton', false),
-                 array('authpreventaccountcreation', true),
                  array('allowuserblockhiding', false),
                  array('enabledevicedetection', false),
                  array('allowguestmymoodle', false),
@@ -432,7 +446,7 @@ foreach ($blocks AS $blk_name) {
     }
 }
 
-echo "\n=> changing global settings:\n";
+echo "\n=> changing some global settings:\n";
 foreach ($configs AS $cfg) {
     if (count($cfg) == 2) {
         set_config($cfg[0], $cfg[1]);
@@ -442,17 +456,28 @@ foreach ($configs AS $cfg) {
 }
 
 $auth = get_config('moodle', 'auth');
+$exam = false;
 if (empty($auth)) {
     if (exists_auth_plugin('exam')) {
         $auth = 'exam';
         set_config('auth', $auth);
         echo "\n=> Authentication plugin: '{$auth}' was enabled.\n";
+        $exam = true;
     } else {
         echo "\n=> 'Moodle Exam' authentication plugin is not avaliable. Keeped 'manual' authentication as the only one option.\n";
+        set_config('auth_plugin', 'manual', 'local_exam_authorization');
     }
 } else {
     echo "\n=> Authentication plugin is already seted to: '{$auth}'\n";
+    if ($auth == 'exam') {
+        echo "\n=> Authentication plugin: '{$auth}' is enabled.\n";
+        $exam = true;
+    }
 }
-echo "   You can change this visiting: {$CFG->wwwroot}/admin/settings.php?section=manageauths\n";
 
+if ($exam) {
+    set_config('authpreventaccountcreation', 0);
+    set_config('auth_plugin', $auth, 'local_exam_authorization');
+    echo "\n=> Config 'authpreventaccountcreation' was changed to 'false' to allow automatic creation of users in the Moodle Exam after they autenticate themselves.\n";
+}
 echo "\n=> end\n";
