@@ -83,7 +83,7 @@ if ($hassiteconfig && isset($ADMIN)) {
 
     $auth_menu = array();
     foreach(get_enabled_auth_plugins() AS $auth) {
-        $auth_menu[$auth] = $auth;
+        $auth_menu[$auth] = get_string('pluginname', "auth_{$auth}");
     }
 
     $settings->add(new admin_setting_configselect('local_exam_authorization/auth_plugin',
