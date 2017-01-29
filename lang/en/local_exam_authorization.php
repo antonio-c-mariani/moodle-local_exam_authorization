@@ -36,10 +36,10 @@ $string['exam_authorization:take_exam'] = 'Take exam in Moodle Exam';
 $string['exam_authorization:supervise_exam'] = 'Supervise exam in Moodle Exam';
 $string['exam_authorization:monitor_exam'] = 'View exam reports in Moodle Exam';
 
-$string['disable_header_check'] = 'Desativar verificação de uso do CD';
-$string['disable_header_check_desc'] = 'Se marcada, esta opção desativa completamenta a verificação de acesso ao Moodle provas via CD de Provas.';
-$string['header_version'] = 'Versão mínima do CD';
-$string['header_version_descr'] = 'Versão mínima (ex: 1.3) suportada do CD Moodle Provas. Deixe em branco para desabilitar esta verificação.';
+$string['disable_header_check'] = 'Desativar verificação de uso da ISO Provas';
+$string['disable_header_check_desc'] = 'Se marcada, esta opção desativa completamenta a verificação de acesso ao Moodle provas via ISO Provas.';
+$string['header_version'] = 'Versão mínima da ISO';
+$string['header_version_descr'] = 'Versão mínima (ex: 1.3) suportada da Iso Provas. Deixe em branco para desabilitar esta verificação.';
 $string['client_host_timeout'] = 'Tempo de expiração do cliente';
 $string['client_host_timeout_descr'] = 'Tempo máximo (em minutos) entre a última notificação de vida do cliente e a autenticação do estudante.
     Utilize 0 (zero) para desabilitar esta verificação.';
@@ -104,9 +104,9 @@ $string['monitor_roleid_descr'] = 'Papel com os quais pessoas que monitoram a re
 $string['auth_plugin'] = 'Método de autenticação';
 $string['auth_plugin_descr'] = 'Método de autenticação para novos usuários que sejam automaticamente cadastrados por este módulo no Moodle Provas.';
 
-$string['browser_no_version_header'] = 'Não foi possível validar a versão do CD de Provas.';
-$string['browser_invalid_version_header'] = 'Versão inválida do CD de Provas.';
-$string['browser_old_version'] = 'Versão antiga do CD de Provas.';
+$string['browser_no_version_header'] = 'Não foi possível validar a versão da ISO Provas.';
+$string['browser_invalid_version_header'] = 'Versão inválida da ISO Provas.';
+$string['browser_old_version'] = 'Versão antiga da ISO Provas.';
 
 $string['has_student_session'] = 'Por questões de segurança só pode haver uma sessão ativa de um mesmo estudante no Moodle Provas. Como foi detectada a existência de outra sessão, seu acesso foi negado. Em caso de dúvidas, converse com o supervisor da prova pois ele pode remover esta outra sessão, liberando seu acesso.';
 $string['session_removed'] = 'Por questões de segurança só pode haver uma sessão ativa de um mesmo usuário no Moodle Provas. Desta forma, foi removida \'{$a}\' sessão que estava ativa em seu nome.';
@@ -115,11 +115,11 @@ $string['sessions_removed'] = 'Por questões de segurança só pode haver uma se
 $string['remoteaddrfield'] = 'Campo de IP do cliente';
 $string['remoteaddrfield_desc'] = 'Nome do campo do cabeçalho HTTP que identifica o IP do cliente que está acessando o Moodle Provas. Em geral este campo é \'REMOTE_ADDR\' ou \'X_REAL_IP\' no caso de haver proxy reverso.';
 
-$string['browser_unknown_ip_header'] = 'O cabeçalho IP não foi informado. O uso do CD de Provas é necessário para a realização de provas.';
-$string['browser_invalid_ip_header'] = 'O cabeçalho IP é inválido. Está sendo utilizada a versão correta do CD de Provas?';
-$string['browser_unknown_network_header'] = 'O cabeçalho de rede não foi informado. O uso do CD de Provas é necessário para a realização de provas.';
-$string['browser_invalid_network_header'] = 'O cabeçalho de rede é inválido. Está sendo utilizada a versão correta do CD de Provas?';
-$string['unknown_client_host'] = 'Este computador não foi identificado. Está sendo utilizada a versão correta do CD de Provas? Se sim, então pode ser que haja algum problema com a rede local de computadores ou com a comunicação com o Moodle Provas.';
-$string['client_host_timedout'] = 'Este computador está há muito sem comunicar-se com o servidor. Está sendo utilizada a versão correta do CD de Provas? Se sim, então pode ser que haja algum problema com a rede local de computadores ou com a comunicação com o Moodle Provas.';
+$string['browser_unknown_ip_header'] = 'O cabeçalho IP não foi informado. O uso da ISO Provas é necessária para a realização de provas.';
+$string['browser_invalid_ip_header'] = 'O cabeçalho IP é inválido. Está sendo utilizada a versão correta da ISO Provas?';
+$string['browser_unknown_network_header'] = 'O cabeçalho de rede não foi informado. O uso da ISO Provas é necessária para a realização de provas.';
+$string['browser_invalid_network_header'] = 'O cabeçalho de rede é inválido. Está sendo utilizada a versão correta da ISO Provas?';
+$string['unknown_client_host'] = 'Este computador não foi identificado. Está sendo utilizada a versão correta da ISO Provas? Se sim, então pode ser que haja algum problema com a rede local de computadores ou com a comunicação com o Moodle Provas.';
+$string['client_host_timedout'] = 'Este computador está há muito sem comunicar-se com o servidor. Está sendo utilizada a versão correta da ISO Provas? Se sim, então pode ser que haja algum problema com a rede local de computadores ou com a comunicação com o Moodle Provas.';
 $string['client_host_out_of_subnet'] = 'A chave de acesso foi gerada num computador que está fisicamente numa rede local, mas a chave está sendo utilizada em outra rede. Quem gerou a chave a configurou para não permitir tal uso. É necessário gerar uma nova chave diretamente neste computador, ou gerá-la selecionando a opção "Não" para o parâmetro "Restringir uso à rede local".';
 $string['no_access_key'] = 'Este computador/sessão não está liberado para realização de provas. Assim, ele só pode ser utilizado por pessoas para elaborar, monitorar ou supervisionar provas. Para um estudante poder utilizá-lo para realizar prova é necessário que o supervisor gere um chave de acesso e libere-o utilizando esta chave.';

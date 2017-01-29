@@ -21,9 +21,9 @@
 // como publicada pela "Free Software Foundation".
 
 /**
- * A script to receive data from CD.
+ * A script to receive data from the ISO Exam.
  *
- * Obtém dados da rede local e funciona também como keep-alive.
+ * Receive data fom the ISO Exam. Work as a keep-alive function.
  *
  * @package    local_exam_authorization
  * @author     Antonio Carlos Mariani

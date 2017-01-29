@@ -6,65 +6,28 @@ Plugin local para autorização para realização de provas
 Moodle Provas
 =============
 
-O "Moodle Provas" é uma solução desenvolvida pela
-Universidade Federal de Santa Catarina
+O "Moodle Provas" é uma solução desenvolvida pela Universidade Federal de Santa Catarina
 com financiamenteo do programa Universidade Aberta do Brasil (UAB)
-para a realização de provas seguras nos pólos utilizando
-o Moodle através da internet.
+para a realização de provas seguras nos pólos utilizando o Moodle através da internet.
 
-Além deste plugin, mais dois plugins compõem o pacote do Moodle Provas:
+No endereço abaixo você pode acessar um tutorial sobre a arquitetura do Moodle Provas
+além de instruções para instalação e uso:
 
-* local-exam_remote: Plugin que cria os webservices necessários no Moodle de origem
-* block-exam_actions : Bloco que serve de interface para as ações sobre as provas
-
-Foi desenvolvido também um "CD de Provas", derivado do Ubuntu, para
-restringir o acesso aos recursos dos computadores utilizados
-para realização da provas.
-
-No endereço abaixo você pode acessar um tutorial sobre a
-arquitetura do Moodle Provas:
-
-    https://github.com/UFSC/moodle-provas-blocks-exam_actions/wikis/home
+    http://moodleprovas.inf.ufsc.br/
 
 Download
 ========
 
 Este plugin está disponível no seguinte endereço:
 
-    https://github.com/UFSC/moodle-provas-local-exam_authorization
+    https://github.com/antonio-c-mariani/moodle-local_exam_authorization
 
-Os outros plugins podem ser encontrados em:
+Os outros plugins a ele associados podem ser encontrados em:
 
-    https://github.com/UFSC/moodle-provas-local-exam_remote
-    https://github.com/UFSC/moodle-provas-blocks-exam_actions
-
-O código e instruções para gravação do "CD de Provas" podem ser encontrados em:
-
-    https://github.com/UFSC/moodle-provas-livecd-provas
-
-Instalação
-==========
-
-* Este plugin deve ser instalado no "Moodle de Provas".
-* Este plugin é do tipo local, logo deve ser instalado no diretório "local", na raiz do seu moodle.
-* O nome diretório deste plugin dentro do diretório "local" deve ser "exam_authorization" (sem as aspas).
-* Após colocar o código do plugin no diretório correto, visite o seu Moodle como administrador para finalizar a instalação.
-
-Pós-instalação
-==============
-
-Há um script em cli/configure_moodle_provas.php que realiza diversas operações de configuração, dentre elas:
-
-* define papeis adicionais: supervisor e monitor
-* remove diversas permissões dos papeis estudante e professor;
-* oculta/desativa diversos módulos e blocos (forum, message, etc)
-* altera diversos parâmetros globais de configuração
-
-Para executar este script través da linha de comando, você vai precisar do "php-cli" (php command line interface).
-Com o php-cli instalado, você pode acessar o diretório do plugin e executar o script com os seguintes comandos:
-
-    cd moodle/local/exam_authorization
-    php cli/configure_moodle_provas.php
+    https://github.com/antonio-c-mariani/moodle-local_exam_remote
+    https://github.com/antonio-c-mariani/moodle-blocks_exam_actions
+    https://github.com/antonio-c-mariani/moodle-auth_exam
+    https://github.com/antonio-c-mariani/generate_safe_exam_ISO
 
 Licença
 =======

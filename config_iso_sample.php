@@ -22,7 +22,7 @@
 // como publicada pela "Free Software Foundation".
 
 /**
- * This file contains sample of CD configuration for an institution
+ * This file contains sample of ISO Exam configuration for an institution
  *
  * @package    local_exam_authorization
  * @author     Antonio Carlos Mariani
