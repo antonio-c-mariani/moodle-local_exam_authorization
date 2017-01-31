@@ -33,5 +33,9 @@ define('CLI_SCRIPT', true);
 
 require_once(dirname(__FILE__).'/../../../config.php');
 
-$students = \local_exam_authorization\authorization::get_students('c1', 'origem', array());
-var_dump($students);
+try {
+    $students = \local_exam_authorization\authorization::get_students('c132', 'origem', array());
+    var_dump($students);
+} catch (Exception $e) {
+    var_dump($e);
+}

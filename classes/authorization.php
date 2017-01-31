@@ -390,6 +390,9 @@ class authorization {
         $SESSION->exam->write_exam = false;
         $SESSION->exam->supervise_exam = false;
         $SESSION->exam->monitor_exam = false;
+        if (isset($SESSION->exam->user_courses)) {
+            unset($SESSION->exam->user_courses);
+        }
 
         self::check_general_user_permission($user->username);
         self::sync_enrols($user->id);
@@ -427,11 +430,11 @@ class authorization {
      *
      * @param string $username The username (with system magic quotes)
      *
-     * @return mixed array with user data or false the username is unknown
+     * @return mixed array with user data or false the user is unknown
      */
-    public static function get_userinfo($username) {
-        $ws_function = 'core_user_get_users_by_field';
-        $params = array('field' => 'username',  'values' => array($username));
+    public static function get_userinfo($username, $customfields=array()) {
+        $ws_function = 'local_exam_remote_get_users';
+        $params = array('field' => 'username', 'value'=> $username, 'customfields' => $customfields);
 
         foreach (self::get_moodles() AS $m) {
             $users = self::call_remote_function($m->identifier, $ws_function, $params);
@@ -451,11 +454,15 @@ class authorization {
      * @return array
      */
 
-    public static function get_user_courses($username, $identifier='') {
-        global $DB;
+    public static function get_user_courses($username, $onlyvisible=true, $identifier='', $forcereload=false) {
+        global $DB, $SESSION;
+
+        if (isset($SESSION->exam->user_courses) && !$forcereload) {
+            return $SESSION->exam->user_courses;
+        }
 
         $ws_function = 'local_exam_remote_get_user_courses';
-        $params = array('username' => $username);
+        $params = array('username' => $username, 'onlyvisible' => $onlyvisible ? 1 : 0);
 
         $moodles = empty($identifier) ? self::get_moodles() : array(self::get_moodle($identifier));
 
@@ -466,6 +473,8 @@ class authorization {
                 $courses[$m->identifier][$course->shortname] = $course;
             }
         }
+
+        $SESSION->exam->user_courses = $courses;
         return $courses;
     }
 
@@ -794,8 +803,19 @@ class authorization {
         $DB->insert_record('exam_access_keys_log', $rec);
     }
 
-    public static function split_shortname($shortname) {
-        return explode('_', $shortname, 2);
+    public static function split_shortname($shortname, $printerror=true) {
+        $result = explode('_', $shortname, 2);
+        list($identifier, $short) = $result;
+        if (self::get_moodle($identifier) && !empty($short)) {
+            return $result;
+        } else {
+            if ($printerror) {
+                $url = new moodle_url('/my');
+                print_error('invalid_shortname', 'local_exam_authorization', $url, $shortname);
+            } else {
+                return false;
+            }
+        }
     }
 
     public static function call_remote_function($identifier, $ws_function, $params) {

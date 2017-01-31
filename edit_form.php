@@ -42,7 +42,7 @@ class exam_authorization_form extends moodleform {
 
         $mform->addElement('text', 'identifier', get_string('identifier', 'local_exam_authorization'), 'maxlength="20" size="20"');
         $mform->addRule('identifier', get_string('required'), 'required', null, 'client');
-        $mform->setType('identifier', PARAM_TEXT);
+        $mform->setType('identifier', PARAM_ALPHANUM);
         $mform->addHelpButton('identifier', 'identifier', 'local_exam_authorization');
         if ($moodle->id) {
             $mform->freeze('identifier');

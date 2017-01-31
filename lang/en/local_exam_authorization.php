@@ -71,6 +71,7 @@ $string['not_configured'] = 'Módulo de Controle de Acesso ao Moodle Provas não
 $string['invalid_identifier'] = 'Deve ser um símbolo composto apenas por letras e dígitos numéricos';
 $string['invalid_token'] = 'Deve ser um símbolo composto 32 caracteres alfanuméricos (dígitos hexadecimais).';
 $string['invalid_url'] = 'URL inválida.';
+$string['invalid_shortname'] = 'O nome curto \'{$a}\' é de um curso local ou não é válido.';
 
 $string['confirmdelete'] = 'Realmente remover a relação com a instalação remota de Moodle: \'{$a}\'?';
 $string['already_exists'] = 'Já há outro registro com este valor.';

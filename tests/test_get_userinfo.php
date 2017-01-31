@@ -33,5 +33,5 @@ define('CLI_SCRIPT', true);
 
 require_once(dirname(__FILE__).'/../../../config.php');
 
-$user = \local_exam_authorization\authorization::get_userinfo('t1');
+$user = \local_exam_authorization\authorization::get_userinfo('e1', array('cpf'));
 var_dump($user);
