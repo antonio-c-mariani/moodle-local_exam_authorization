@@ -468,12 +468,19 @@ class authorization {
 
         $courses = array();
         foreach ($moodles AS $m) {
-            $courses[$m->identifier] = array();
+            $identcourses = array();
             foreach (self::call_remote_function($m->identifier, $ws_function, $params) as $course) {
-                $courses[$m->identifier][$course->shortname] = $course;
+                $identcourses[$course->shortname] = $course;
             }
+            if (!empty($identcourses)) {
+                $courses[$m->identifier] = $identcourses;
+            }
+
         }
 
+        if  (!isset($SESSION->exam)) {
+            $SESSION->exam = new \stdClass();
+        }
         $SESSION->exam->user_courses = $courses;
         return $courses;
     }
